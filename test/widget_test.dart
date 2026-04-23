@@ -11,6 +11,6 @@ void main() {
       ),
     );
 
-    expect(find.text('Performance Feed'), findsOneWidget);
+    expect(find.text('Pulse'), findsOneWidget);
   });
 }

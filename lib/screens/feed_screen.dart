@@ -79,10 +79,23 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Performance Feed',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        titleSpacing: 14,
+        title: const Row(
+          children: [
+            Icon(Icons.bubble_chart_rounded, color: Color(0xFF0F766E)),
+            SizedBox(width: 8),
+            Text(
+              'Pulse',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+            ),
+          ],
         ),
+        actions: const [
+          Icon(Icons.search_rounded),
+          SizedBox(width: 14),
+          Icon(Icons.chat_bubble_outline_rounded),
+          SizedBox(width: 16),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -99,14 +112,24 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             cacheExtent: 1200,
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount:
-                showEmptyState ? 1 : posts.length + (feed.loading ? 1 : 0),
+                showEmptyState
+                    ? 3
+                    : posts.length + 2 + (feed.loading ? 1 : 0),
             itemBuilder: (_, i) {
-              if (showEmptyState) {
+              if (i == 0) {
+                return const _ComposerPrompt();
+              }
+
+              if (i == 1) {
+                return _StoriesRow(posts: posts);
+              }
+
+              if (showEmptyState && i == 2) {
                 return const Padding(
-                  padding: EdgeInsets.only(top: 120),
+                  padding: EdgeInsets.only(top: 84),
                   child: Center(
                     child: Text(
-                      'No posts yet. Pull to refresh.',
+                      'No posts yet. Pull down to refresh.',
                       style: TextStyle(
                         color: Color(0xFF334155),
                         fontSize: 15,
@@ -116,16 +139,138 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                 );
               }
 
-              if (i == posts.length) {
+              final postIndex = i - 2;
+
+              if (postIndex == posts.length) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
-              return PostCard(post: posts[i]);
+
+              return PostCard(post: posts[postIndex]);
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ComposerPrompt extends StatelessWidget {
+  const _ComposerPrompt();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: const Row(
+        children: [
+          CircleAvatar(radius: 16, child: Icon(Icons.person_outline_rounded)),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "What's new today?",
+              style: TextStyle(color: Color(0xFF64748B)),
+            ),
+          ),
+          Icon(Icons.image_outlined, color: Color(0xFF0F766E)),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoriesRow extends StatelessWidget {
+  final List<dynamic> posts;
+
+  const _StoriesRow({required this.posts});
+
+  @override
+  Widget build(BuildContext context) {
+    final count = posts.length < 8 ? posts.length : 8;
+    return SizedBox(
+      height: 96,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+        itemBuilder: (_, i) {
+          if (i == 0) {
+            return const _StoryAvatar(
+              label: 'Your story',
+              icon: Icons.add_rounded,
+              accent: Color(0xFF0EA5E9),
+            );
+          }
+
+          final id = posts[i - 1].id as String;
+          final short = id.length > 4 ? id.substring(0, 4) : id;
+          const accents = [
+            Color(0xFFEF4444),
+            Color(0xFFF59E0B),
+            Color(0xFF22C55E),
+            Color(0xFF3B82F6),
+            Color(0xFFA855F7),
+          ];
+
+          return _StoryAvatar(
+            label: 'u_$short',
+            icon: Icons.person_rounded,
+            accent: accents[id.hashCode.abs() % accents.length],
+          );
+        },
+        separatorBuilder: (_, index) => const SizedBox(width: 10),
+        itemCount: count + 1,
+      ),
+    );
+  }
+}
+
+class _StoryAvatar extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color accent;
+
+  const _StoryAvatar({
+    required this.label,
+    required this.icon,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 68,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [accent, accent.withValues(alpha: 0.55)],
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 24,
+              backgroundColor: Colors.white,
+              child: Icon(icon, color: accent),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 11.5),
+          ),
+        ],
       ),
     );
   }
